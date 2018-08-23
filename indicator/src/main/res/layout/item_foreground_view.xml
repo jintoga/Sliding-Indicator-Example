@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/default_margin"
+    android:clickable="true"
+    android:focusable="true"
+    android:padding="16dp"
+    android:tag="container">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:tag="textView"
+        android:textColor="@android:color/black"
+        tools:text="af asf a" />
+</FrameLayout>
