@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/default_margin"
     android:background="@drawable/bg_rounded_corners"
-    android:padding="16dp"
+    android:padding="24dp"
     android:tag="container">
 
     <TextView

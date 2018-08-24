@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         val adapter = TestAdapter(supportFragmentManager)
 
         pager.adapter = adapter
-        indicator.setViewPager(pager)
+        indicator.setViewPager(pager, 4)
     }
 
     private val CONTENT = arrayOf("Recent", "Artists", "Albums", "Songs"
