@@ -8,7 +8,7 @@ interface PageIndicator : ViewPager.OnPageChangeListener {
      *
      * @param view
      */
-    fun setViewPager(view: ViewPager)
+    fun setViewPager(viewPager: ViewPager)
 
     /**
      * Bind the indicator to a ViewPager.
@@ -16,7 +16,7 @@ interface PageIndicator : ViewPager.OnPageChangeListener {
      * @param view
      * @param initialPosition
      */
-    fun setViewPager(view: ViewPager, initialPosition: Int)
+    fun setViewPager(viewPager: ViewPager, initialPosition: Int)
 
     /**
      *

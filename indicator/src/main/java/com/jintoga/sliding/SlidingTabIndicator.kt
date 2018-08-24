@@ -30,7 +30,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
 
     companion object {
         private const val RESIZE_ANIMATION_DURATION = 350L
-        private const val TRANSLATION_ANIMATION_DURATION = 350L
+        private const val TRANSLATION_ANIMATION_DURATION = 380L
     }
 
     private lateinit var backContainer: LinearLayout
@@ -112,13 +112,13 @@ class SlidingTabIndicator @JvmOverloads constructor(
         }
     }
 
-    override fun setViewPager(view: ViewPager) {
-        if (viewPager === view) {
+    override fun setViewPager(viewPager: ViewPager) {
+        if (this.viewPager === viewPager) {
             return
         }
-        viewPager?.setOnPageChangeListener(null)
-        viewPager = view
-        view.setOnPageChangeListener(this)
+        this.viewPager?.setOnPageChangeListener(null)
+        this.viewPager = viewPager
+        viewPager.setOnPageChangeListener(this)
         notifyDataSetChanged()
     }
 
@@ -133,12 +133,12 @@ class SlidingTabIndicator @JvmOverloads constructor(
 
         val tabCount = frontContainer.childCount
         for (i in 0 until tabCount) {
-            val child = frontContainer.getChildAt(i)
+            val tabView = frontContainer.getChildAt(i)
             val isSelected = i == position
-            child.isSelected = isSelected
+            tabView.isSelected = isSelected
             if (isSelected) {
                 scrollToTab(position)
-                animateIndicator(child)
+                animateIndicator(tabView)
             }
         }
     }
@@ -235,7 +235,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
     private inner class TabClickListener : View.OnClickListener {
         override fun onClick(v: View) {
             for (i in 0 until frontContainer.childCount) {
-                if (v === frontContainer.getChildAt(i)) {
+                if (v == frontContainer.getChildAt(i)) {
                     viewPager?.currentItem = i
                     return
                 }
