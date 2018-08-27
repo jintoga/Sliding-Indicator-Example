@@ -7,16 +7,17 @@ interface PageIndicator : ViewPager.OnPageChangeListener {
      * Bind the indicator to a ViewPager.
      *
      * @param view
+     * @param initialPosition
      */
-    fun setViewPager(viewPager: ViewPager)
+    fun setViewPager(viewPager: ViewPager, initialPosition: Int? = null)
 
     /**
-     * Bind the indicator to a ViewPager.
+     * Using the indicator as a "standalone" View.
      *
      * @param view
      * @param initialPosition
      */
-    fun setViewPager(viewPager: ViewPager, initialPosition: Int)
+    fun setCustomData(data: List<SlidingViewItem>, initialPosition: Int? = null)
 
     /**
      *

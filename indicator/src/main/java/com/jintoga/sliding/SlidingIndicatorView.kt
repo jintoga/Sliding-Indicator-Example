@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -137,7 +138,8 @@ class SlidingIndicatorView @JvmOverloads constructor(
         }
     }
 
-    override fun setViewPager(viewPager: ViewPager) {
+
+    override fun setViewPager(viewPager: ViewPager, initialPosition: Int?) {
         if (this.viewPager === viewPager) {
             return
         }
@@ -145,11 +147,16 @@ class SlidingIndicatorView @JvmOverloads constructor(
         this.viewPager = viewPager
         viewPager.addOnPageChangeListener(this)
         notifyDataSetChanged()
+        if (initialPosition != null) {
+            setCurrentItem(initialPosition)
+        }
     }
 
-    override fun setViewPager(viewPager: ViewPager, initialPosition: Int) {
-        setViewPager(viewPager)
-        setCurrentItem(initialPosition)
+    override fun setCustomData(data: List<SlidingViewItem>, initialPosition: Int?) {
+        notifyDataSetChanged()
+        if (initialPosition != null) {
+            setCurrentItem(initialPosition)
+        }
     }
 
     override fun setCurrentItem(position: Int) {
@@ -192,33 +199,38 @@ class SlidingIndicatorView @JvmOverloads constructor(
         frontContainer.removeAllViews()
 
         val tabClickListener = TabClickListener()
-        populateTab(behindContainer, behindLayout, pagerAdapter, null)
-        populateTab(frontContainer, frontLayout, pagerAdapter, tabClickListener)
+        populateTab(pagerAdapter, tabClickListener)
     }
 
-    private fun populateTab(tabStrip: LinearLayout,
-                            layoutId: Int,
-                            adapter: PagerAdapter,
+    private fun populateTab(adapter: PagerAdapter,
                             listener: OnClickListener?) {
         for (i in 0 until adapter.count) {
-            val textView: TextView
-            val container: View
+            val behindRootView = LayoutInflater.from(context).inflate(behindLayout, behindContainer, false)
+            val frontRootView = LayoutInflater.from(context).inflate(frontLayout, frontContainer, false)
+            behindContainer.addView(behindRootView)
+            frontContainer.addView(frontRootView)
+            val title = adapter.getPageTitle(i)
+            bindData(behindRootView, title.toString(), null)
+            bindData(frontRootView, title.toString(), listener)
+        }
+    }
 
-            val rootView = LayoutInflater.from(context).inflate(layoutId, tabStrip, false)
-            container = rootView.findViewWithTag("container")
-            textView = rootView.findViewWithTag("textView")
+    private fun bindData(behindRootView: View, title: String, listener: OnClickListener?) {
+        val container = behindRootView.findViewWithTag<View>("container")
+        val textView = behindRootView.findViewWithTag<TextView>("textView")
 
-            if (distributeEvenly) {
-                val lp = rootView.layoutParams as LinearLayout.LayoutParams
-                lp.width = 0
-                lp.weight = 1f
-            }
+        val params = behindRootView.layoutParams as LinearLayout.LayoutParams
+        params.height = ViewGroup.LayoutParams.WRAP_CONTENT
 
-            textView.text = adapter.getPageTitle(i)
-            if (listener != null) {
-                container.setOnClickListener(listener)
-            }
-            tabStrip.addView(rootView)
+        if (distributeEvenly) {
+            params.width = 0
+            params.weight = 1f
+        }
+
+        textView.text = title
+
+        if (listener != null) {
+            container.setOnClickListener(listener)
         }
     }
 
