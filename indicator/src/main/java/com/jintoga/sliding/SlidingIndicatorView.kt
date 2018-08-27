@@ -16,7 +16,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.jintoga.indicator.R
 
-class SlidingTabIndicator @JvmOverloads constructor(
+class SlidingIndicatorView @JvmOverloads constructor(
         context: Context,
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0
@@ -24,7 +24,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
         PageIndicator,
         ViewPager.OnPageChangeListener {
 
-    private lateinit var backContainer: LinearLayout
+    private lateinit var behindContainer: LinearLayout
     private lateinit var frontContainer: LinearLayout
     private lateinit var indicatorView: IndicatorView
 
@@ -38,12 +38,37 @@ class SlidingTabIndicator @JvmOverloads constructor(
 
     private var tabSelector: Runnable? = null
 
+    private var behindLayout = -1
+    private var frontLayout = -1
+    private var indicatorLayout = -1
+    private var indicatorResizeDuration: Long = AnimationHelper.DEFAULT_RESIZE_ANIMATION_DURATION
+    private var indicatorTranslateDuration: Long = AnimationHelper.DEFAULT_TRANSLATION_ANIMATION_DURATION
+
     init {
         init(attrs)
     }
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
+        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.SlidingIndicatorView, 0, 0)
+        behindLayout = typedArray.getResourceId(R.styleable.SlidingIndicatorView_behindLayout, -1)
+        frontLayout = typedArray.getResourceId(R.styleable.SlidingIndicatorView_frontLayout, -1)
+        indicatorLayout = typedArray.getResourceId(R.styleable.SlidingIndicatorView_indicatorLayout, -1)
+        val indicatorResizeDuration = typedArray.getInteger(R.styleable.SlidingIndicatorView_indicatorResizeDuration, -1)
+        val indicatorTranslateDuration = typedArray.getInteger(R.styleable.SlidingIndicatorView_indicatorTranslateDuration, -1)
+        typedArray.recycle()
+
+        if (behindLayout == -1 || frontLayout == -1 || indicatorLayout == -1) {
+            throw IllegalAccessException("Behind, Front And Indicator background are required")
+        }
+
+        if (indicatorResizeDuration != -1) {
+            this.indicatorResizeDuration = indicatorResizeDuration.toLong()
+        }
+
+        if (indicatorTranslateDuration != -1) {
+            this.indicatorTranslateDuration = indicatorTranslateDuration.toLong()
+        }
 
         // Disable the Scroll Bar
         isHorizontalScrollBarEnabled = false
@@ -51,11 +76,11 @@ class SlidingTabIndicator @JvmOverloads constructor(
         isFillViewport = true
 
         val holderView = FrameLayout(context)
-        backContainer = LinearLayout(context)
-        backContainer.setHorizontalGravity(LinearLayout.HORIZONTAL)
-        holderView.addView(backContainer, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+        behindContainer = LinearLayout(context)
+        behindContainer.setHorizontalGravity(LinearLayout.HORIZONTAL)
+        holderView.addView(behindContainer, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
-        indicatorView = IndicatorView(context)
+        indicatorView = IndicatorView(indicatorLayout, context)
         holderView.addView(indicatorView, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
         frontContainer = LinearLayout(context)
@@ -91,7 +116,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val indicator = indicatorView.findViewById<View>(R.id.indicator)
+        val indicator = indicatorView.getIndicator()
         val width = indicator.width
         val height = indicator.height
         if (width == 0 || height == 0) {
@@ -100,7 +125,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
             params.width = currentView.width
             params.height = currentView.height
             indicator.layoutParams = params
-            val margin = resources.getDimension(R.dimen.default_margin)
+            val margin = (currentView.layoutParams as MarginLayoutParams).leftMargin
             this.indicatorView.x = currentView.x - margin
         }
     }
@@ -138,7 +163,9 @@ class SlidingTabIndicator @JvmOverloads constructor(
             tabView.isSelected = isSelected
             if (isSelected) {
                 scrollToTab(position)
-                AnimationHelper.animateIndicator(tabView, currentTabView, indicatorView)
+                AnimationHelper
+                        .getInstance(indicatorResizeDuration, indicatorTranslateDuration)
+                        .animateIndicator(tabView, currentTabView, indicatorView)
             }
         }
     }
@@ -160,40 +187,24 @@ class SlidingTabIndicator @JvmOverloads constructor(
         requestLayout()
     }
 
-    override fun onPageScrollStateChanged(p0: Int) {
-        pageChangeListener?.onPageScrollStateChanged(p0)
-    }
-
-    override fun onPageScrolled(p0: Int, p1: Float, p2: Int) {
-        pageChangeListener?.onPageScrolled(p0, p1, p2)
-    }
-
-    override fun onPageSelected(p0: Int) {
-        setCurrentItem(p0)
-        pageChangeListener?.onPageSelected(p0)
-    }
-
     private fun initTabItems(pagerAdapter: PagerAdapter) {
-        backContainer.removeAllViews()
+        behindContainer.removeAllViews()
         frontContainer.removeAllViews()
 
         val tabClickListener = TabClickListener()
-        populateTab(backContainer, pagerAdapter, null,
-                R.layout.item_background_view)
-        populateTab(frontContainer, pagerAdapter, tabClickListener,
-                R.layout.item_foreground_view)
+        populateTab(behindContainer, behindLayout, pagerAdapter, null)
+        populateTab(frontContainer, frontLayout, pagerAdapter, tabClickListener)
     }
 
     private fun populateTab(tabStrip: LinearLayout,
+                            layoutId: Int,
                             adapter: PagerAdapter,
-                            listener: View.OnClickListener?,
-                            layoutId: Int) {
+                            listener: OnClickListener?) {
         for (i in 0 until adapter.count) {
             val textView: TextView
             val container: View
 
-            val rootView = LayoutInflater.from(context).inflate(layoutId, tabStrip,
-                    false)
+            val rootView = LayoutInflater.from(context).inflate(layoutId, tabStrip, false)
             container = rootView.findViewWithTag("container")
             textView = rootView.findViewWithTag("textView")
 
@@ -209,6 +220,19 @@ class SlidingTabIndicator @JvmOverloads constructor(
             }
             tabStrip.addView(rootView)
         }
+    }
+
+    override fun onPageScrollStateChanged(p0: Int) {
+        pageChangeListener?.onPageScrollStateChanged(p0)
+    }
+
+    override fun onPageScrolled(p0: Int, p1: Float, p2: Int) {
+        pageChangeListener?.onPageScrolled(p0, p1, p2)
+    }
+
+    override fun onPageSelected(p0: Int) {
+        setCurrentItem(p0)
+        pageChangeListener?.onPageSelected(p0)
     }
 
     private fun scrollToTab(position: Int) {

@@ -4,16 +4,31 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
-import com.jintoga.indicator.R
 
 
-object AnimationHelper {
-    private const val RESIZE_ANIMATION_DURATION = 350L
-    private const val TRANSLATION_ANIMATION_DURATION = 380L
+class AnimationHelper private constructor(private val resizeDuration: Long,
+                                          private val translationDuration: Long) {
+
+    companion object {
+        const val DEFAULT_RESIZE_ANIMATION_DURATION = 350L
+        const val DEFAULT_TRANSLATION_ANIMATION_DURATION = 380L
+
+        @Volatile
+        private var INSTANCE: AnimationHelper? = null
+
+        fun getInstance(resizeDuration: Long,
+                        translationDuration: Long): AnimationHelper =
+                INSTANCE ?: synchronized(this) {
+                    INSTANCE ?: AnimationHelper(resizeDuration, translationDuration)
+                            .also { INSTANCE = it }
+                }
+    }
+
 
     fun animateIndicator(toView: View, fromView: View?, indicatorView: IndicatorView) {
-        val indicator = indicatorView.findViewById<View>(R.id.indicator)
+        val indicator = indicatorView.getIndicator()
         if (fromView == null) {
             indicator.layoutParams.width = 0
             indicator.layoutParams.height = 0
@@ -30,7 +45,7 @@ object AnimationHelper {
             indicator.layoutParams.width = animation.animatedValue as Int
             indicator.requestLayout()
         }
-        widthAnimator.duration = RESIZE_ANIMATION_DURATION
+        widthAnimator.duration = resizeDuration
 
         val fromHeight = fromView.height
         val toHeight = toView.height
@@ -39,12 +54,12 @@ object AnimationHelper {
             indicator.layoutParams.height = animation.animatedValue as Int
             indicator.requestLayout()
         }
-        heightAnimator.duration = RESIZE_ANIMATION_DURATION
+        heightAnimator.duration = resizeDuration
 
-        val margin = indicatorView.resources.getDimension(R.dimen.default_margin)
+        val margin = (toView.layoutParams as ViewGroup.MarginLayoutParams).leftMargin
         val toX = toView.x - margin
         val translationAnimator = ObjectAnimator.ofFloat(indicatorView, "translationX", toX)
-        translationAnimator.duration = TRANSLATION_ANIMATION_DURATION
+        translationAnimator.duration = translationDuration
 
         animatorSet.playTogether(widthAnimator, heightAnimator, translationAnimator)
         animatorSet.start()

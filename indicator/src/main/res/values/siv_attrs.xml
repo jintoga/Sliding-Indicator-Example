@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="SlidingIndicatorView">
+        <attr name="behindLayout" format="reference" />
+        <attr name="frontLayout" format="reference" />
+        <attr name="indicatorLayout" format="reference" />
+        <attr name="indicatorResizeDuration" format="integer" />
+        <attr name="indicatorTranslateDuration" format="integer" />
+    </declare-styleable>
+
+</resources>

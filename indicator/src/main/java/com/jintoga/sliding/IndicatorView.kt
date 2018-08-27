@@ -1,11 +1,14 @@
 package com.jintoga.sliding
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
 import android.widget.FrameLayout
-import com.jintoga.indicator.R
 
+@SuppressLint("ViewConstructor")
 class IndicatorView @JvmOverloads constructor(
+        private val layoutId: Int,
         context: Context,
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0
@@ -16,7 +19,9 @@ class IndicatorView @JvmOverloads constructor(
     }
 
     private fun init() {
-        inflate(context, R.layout.item_indicator_view, this)
+        inflate(context, layoutId, this)
     }
+
+    fun getIndicator(): View = this.getChildAt(0)
 
 }
