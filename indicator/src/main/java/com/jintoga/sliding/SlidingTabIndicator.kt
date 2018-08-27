@@ -1,8 +1,5 @@
 package com.jintoga.sliding
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
@@ -13,7 +10,6 @@ import android.util.AttributeSet
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
-import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -28,11 +24,6 @@ class SlidingTabIndicator @JvmOverloads constructor(
         PageIndicator,
         ViewPager.OnPageChangeListener {
 
-    companion object {
-        private const val RESIZE_ANIMATION_DURATION = 350L
-        private const val TRANSLATION_ANIMATION_DURATION = 380L
-    }
-
     private lateinit var backContainer: LinearLayout
     private lateinit var frontContainer: LinearLayout
     private lateinit var indicatorView: IndicatorView
@@ -40,7 +31,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
     private var distributeEvenly: Boolean = false
 
     private var viewPager: ViewPager? = null
-    private var currentView: View? = null
+    private var currentTabView: View? = null
     private var pageChangeListener: ViewPager.OnPageChangeListener? = null
 
     private var selectedTabIndex: Int = 0
@@ -72,6 +63,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
         holderView.addView(frontContainer, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
         addView(holderView, FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+
     }
 
     public override fun onAttachedToWindow() {
@@ -89,13 +81,21 @@ class SlidingTabIndicator @JvmOverloads constructor(
         }
     }
 
+    override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>) {
+        dispatchFreezeSelfOnly(container)
+    }
+
+    override fun dispatchRestoreInstanceState(container: SparseArray<Parcelable>) {
+        dispatchThawSelfOnly(container)
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val indicator = indicatorView.findViewById<View>(R.id.indicator)
         val width = indicator.width
         val height = indicator.height
         if (width == 0 || height == 0) {
-            val currentView = this.currentView!!
+            val currentView = this.currentTabView!!
             val params = indicator.layoutParams
             params.width = currentView.width
             params.height = currentView.height
@@ -107,8 +107,8 @@ class SlidingTabIndicator @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        if (currentView == null) {
-            currentView = frontContainer.getChildAt(selectedTabIndex)
+        if (currentTabView == null) {
+            currentTabView = frontContainer.getChildAt(selectedTabIndex)
         }
     }
 
@@ -116,14 +116,14 @@ class SlidingTabIndicator @JvmOverloads constructor(
         if (this.viewPager === viewPager) {
             return
         }
-        this.viewPager?.setOnPageChangeListener(null)
+        this.viewPager?.clearOnPageChangeListeners()
         this.viewPager = viewPager
-        viewPager.setOnPageChangeListener(this)
+        viewPager.addOnPageChangeListener(this)
         notifyDataSetChanged()
     }
 
-    override fun setViewPager(view: ViewPager, initialPosition: Int) {
-        setViewPager(view)
+    override fun setViewPager(viewPager: ViewPager, initialPosition: Int) {
+        setViewPager(viewPager)
         setCurrentItem(initialPosition)
     }
 
@@ -138,7 +138,7 @@ class SlidingTabIndicator @JvmOverloads constructor(
             tabView.isSelected = isSelected
             if (isSelected) {
                 scrollToTab(position)
-                animateIndicator(tabView)
+                AnimationHelper.animateIndicator(tabView, currentTabView, indicatorView)
             }
         }
     }
@@ -182,14 +182,6 @@ class SlidingTabIndicator @JvmOverloads constructor(
                 R.layout.item_background_view)
         populateTab(frontContainer, pagerAdapter, tabClickListener,
                 R.layout.item_foreground_view)
-    }
-
-    override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>) {
-        dispatchFreezeSelfOnly(container)
-    }
-
-    override fun dispatchRestoreInstanceState(container: SparseArray<Parcelable>) {
-        dispatchThawSelfOnly(container)
     }
 
     private fun populateTab(tabStrip: LinearLayout,
@@ -241,44 +233,5 @@ class SlidingTabIndicator @JvmOverloads constructor(
                 }
             }
         }
-    }
-
-    private fun animateIndicator(toView: View) {
-        val indicatorView = indicatorView.findViewById<View>(R.id.indicator)
-        val currentView = this.currentView
-        if (currentView == null) {
-            indicatorView.layoutParams.width = 0
-            indicatorView.layoutParams.height = 0
-            indicatorView.requestLayout()
-            return
-        }
-
-        val animatorSet = AnimatorSet()
-        animatorSet.interpolator = OvershootInterpolator(0.85f)
-        val fromWidth = currentView.width
-        val toWidth = toView.width
-        val widthAnimator = ValueAnimator.ofInt(fromWidth, toWidth)
-        widthAnimator.addUpdateListener { animation ->
-            indicatorView.layoutParams.width = animation.animatedValue as Int
-            indicatorView.requestLayout()
-        }
-        widthAnimator.duration = RESIZE_ANIMATION_DURATION
-
-        val fromHeight = currentView.height
-        val toHeight = toView.height
-        val heightAnimator = ValueAnimator.ofInt(fromHeight, toHeight)
-        heightAnimator.addUpdateListener { animation ->
-            indicatorView.layoutParams.height = animation.animatedValue as Int
-            indicatorView.requestLayout()
-        }
-        heightAnimator.duration = RESIZE_ANIMATION_DURATION
-
-        val margin = resources.getDimension(R.dimen.default_margin)
-        val toX = toView.x - margin
-        val translationAnimator = ObjectAnimator.ofFloat(this.indicatorView, "translationX", toX)
-        translationAnimator.duration = TRANSLATION_ANIMATION_DURATION
-
-        animatorSet.playTogether(widthAnimator, heightAnimator, translationAnimator)
-        animatorSet.start()
     }
 }
