@@ -215,11 +215,11 @@ class SlidingIndicatorView @JvmOverloads constructor(
         }
     }
 
-    private fun bindData(behindRootView: View, title: String, listener: OnClickListener?) {
-        val container = behindRootView.findViewWithTag<View>("container")
-        val textView = behindRootView.findViewWithTag<TextView>("textView")
+    private fun bindData(rootView: View, title: String, listener: OnClickListener?) {
+        val container = rootView.findViewWithTag<View>("container")
+        val textView = rootView.findViewWithTag<TextView>("textView")
 
-        val params = behindRootView.layoutParams as LinearLayout.LayoutParams
+        val params = rootView.layoutParams as LinearLayout.LayoutParams
         params.height = ViewGroup.LayoutParams.WRAP_CONTENT
 
         if (distributeEvenly) {
