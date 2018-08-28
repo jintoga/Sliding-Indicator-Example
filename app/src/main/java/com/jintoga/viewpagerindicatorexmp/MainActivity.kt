@@ -5,19 +5,34 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.app.AppCompatActivity
+import android.view.View
+import android.widget.TextView
+import com.jintoga.slidingindicatorview.DataBinder
 import kotlinx.android.synthetic.main.activity_main.*
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), DataBinder {
+
+    private lateinit var adapter: TestAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val adapter = TestAdapter(supportFragmentManager)
+        adapter = TestAdapter(supportFragmentManager)
 
         pager.adapter = adapter
-        indicator.setViewPager(pager, 4)
+        indicator.setViewPager(
+                viewPager = pager,
+                dataBinder = this,
+                initialPosition = 4)
+    }
+
+    override fun onTabCount(): Int = CONTENT.size
+
+    override fun onBindTabData(rootView: View, position: Int) {
+        val textView = rootView.findViewWithTag<TextView>("textView")
+        textView.text = adapter.getPageTitle(position)
     }
 
     private val CONTENT = arrayOf("Recent", "Artists", "Albums", "Songs"

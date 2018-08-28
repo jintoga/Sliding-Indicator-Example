@@ -1,10 +1,9 @@
-package com.jintoga.sliding
+package com.jintoga.slidingindicatorview
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.os.Parcelable
-import android.support.v4.view.PagerAdapter
 import android.support.v4.view.ViewPager
 import android.util.AttributeSet
 import android.util.SparseArray
@@ -14,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
-import android.widget.TextView
 import com.jintoga.indicator.R
 
 class SlidingIndicatorView @JvmOverloads constructor(
@@ -44,6 +42,8 @@ class SlidingIndicatorView @JvmOverloads constructor(
     private var indicatorLayout = -1
     private var indicatorResizeDuration: Long = AnimationHelper.DEFAULT_RESIZE_ANIMATION_DURATION
     private var indicatorTranslateDuration: Long = AnimationHelper.DEFAULT_TRANSLATION_ANIMATION_DURATION
+
+    private var dataBinder: DataBinder? = null
 
     init {
         init(attrs)
@@ -138,21 +138,26 @@ class SlidingIndicatorView @JvmOverloads constructor(
         }
     }
 
-
-    override fun setViewPager(viewPager: ViewPager, initialPosition: Int?) {
-        if (this.viewPager === viewPager) {
+    override fun setViewPager(viewPager: ViewPager,
+                              dataBinder: DataBinder,
+                              initialPosition: Int?) {
+        if (this.viewPager == viewPager) {
             return
         }
         this.viewPager?.clearOnPageChangeListeners()
         this.viewPager = viewPager
         viewPager.addOnPageChangeListener(this)
-        notifyDataSetChanged()
-        if (initialPosition != null) {
-            setCurrentItem(initialPosition)
-        }
+
+        init(dataBinder, initialPosition)
     }
 
-    override fun setCustomData(data: List<SlidingViewItem>, initialPosition: Int?) {
+    override fun setCustomData(dataBinder: DataBinder,
+                               initialPosition: Int?) {
+        init(dataBinder, initialPosition)
+    }
+
+    private fun init(dataBinder: DataBinder, initialPosition: Int?) {
+        this.dataBinder = dataBinder
         notifyDataSetChanged()
         if (initialPosition != null) {
             setCurrentItem(initialPosition)
@@ -182,11 +187,10 @@ class SlidingIndicatorView @JvmOverloads constructor(
     }
 
     override fun notifyDataSetChanged() {
-        val adapter = viewPager?.adapter
-                ?: throw IllegalStateException("ViewPager does not have adapter instance.")
-        initTabItems(adapter)
+        val dataBinder = this.dataBinder ?: throw IllegalAccessException("")
+        initTabItems(dataBinder)
 
-        val count = adapter.count
+        val count = dataBinder.onTabCount()
         if (selectedTabIndex > count) {
             selectedTabIndex = count - 1
         }
@@ -194,44 +198,38 @@ class SlidingIndicatorView @JvmOverloads constructor(
         requestLayout()
     }
 
-    private fun initTabItems(pagerAdapter: PagerAdapter) {
+    private fun initTabItems(dataBinder: DataBinder) {
         behindContainer.removeAllViews()
         frontContainer.removeAllViews()
 
         val tabClickListener = TabClickListener()
-        populateTab(pagerAdapter, tabClickListener)
+        populateTab(dataBinder, tabClickListener)
     }
 
-    private fun populateTab(adapter: PagerAdapter,
-                            listener: OnClickListener?) {
-        for (i in 0 until adapter.count) {
+    private fun populateTab(dataBinder: DataBinder, listener: OnClickListener?) {
+        for (i in 0 until dataBinder.onTabCount()) {
             val behindRootView = LayoutInflater.from(context).inflate(behindLayout, behindContainer, false)
             val frontRootView = LayoutInflater.from(context).inflate(frontLayout, frontContainer, false)
             behindContainer.addView(behindRootView)
             frontContainer.addView(frontRootView)
-            val title = adapter.getPageTitle(i)
-            bindData(behindRootView, title.toString(), null)
-            bindData(frontRootView, title.toString(), listener)
+
+            bindData(behindRootView, i, dataBinder)
+            bindData(frontRootView, i, dataBinder)
+
+            frontRootView.setOnClickListener(listener)
         }
     }
 
-    private fun bindData(rootView: View, title: String, listener: OnClickListener?) {
-        val container = rootView.findViewWithTag<View>("container")
-        val textView = rootView.findViewWithTag<TextView>("textView")
-
+    private fun bindData(rootView: View,
+                         position: Int,
+                         dataBinder: DataBinder) {
         val params = rootView.layoutParams as LinearLayout.LayoutParams
         params.height = ViewGroup.LayoutParams.WRAP_CONTENT
-
         if (distributeEvenly) {
             params.width = 0
             params.weight = 1f
         }
-
-        textView.text = title
-
-        if (listener != null) {
-            container.setOnClickListener(listener)
-        }
+        dataBinder.onBindTabData(rootView, position)
     }
 
     override fun onPageScrollStateChanged(p0: Int) {
@@ -264,7 +262,12 @@ class SlidingIndicatorView @JvmOverloads constructor(
         override fun onClick(v: View) {
             for (i in 0 until frontContainer.childCount) {
                 if (v == frontContainer.getChildAt(i)) {
-                    viewPager?.currentItem = i
+                    val viewPager = viewPager
+                    if (viewPager != null) {
+                        viewPager.currentItem = i
+                    } else {
+                        setCurrentItem(i)
+                    }
                     return
                 }
             }

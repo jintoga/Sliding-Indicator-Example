@@ -1,4 +1,4 @@
-package com.jintoga.sliding
+package com.jintoga.slidingindicatorview
 
 import android.support.v4.view.ViewPager
 
@@ -9,7 +9,9 @@ interface PageIndicator : ViewPager.OnPageChangeListener {
      * @param view
      * @param initialPosition
      */
-    fun setViewPager(viewPager: ViewPager, initialPosition: Int? = null)
+    fun setViewPager(viewPager: ViewPager,
+                     dataBinder: DataBinder,
+                     initialPosition: Int? = null)
 
     /**
      * Using the indicator as a "standalone" View.
@@ -17,7 +19,8 @@ interface PageIndicator : ViewPager.OnPageChangeListener {
      * @param view
      * @param initialPosition
      */
-    fun setCustomData(data: List<SlidingViewItem>, initialPosition: Int? = null)
+    fun setCustomData(dataBinder: DataBinder,
+                      initialPosition: Int? = null)
 
     /**
      *

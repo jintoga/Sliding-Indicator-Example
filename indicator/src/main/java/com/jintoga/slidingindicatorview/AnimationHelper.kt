@@ -1,4 +1,4 @@
-package com.jintoga.sliding
+package com.jintoga.slidingindicatorview
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator

@@ -1,4 +1,4 @@
-package com.jintoga.sliding
+package com.jintoga.slidingindicatorview
 
 import android.annotation.SuppressLint
 import android.content.Context

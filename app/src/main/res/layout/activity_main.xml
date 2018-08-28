@@ -26,7 +26,7 @@
         android:layout_marginTop="16dp"
         android:layout_weight="1" />
 
-    <com.jintoga.sliding.SlidingIndicatorView
+    <com.jintoga.slidingindicatorview.SlidingIndicatorView
         android:id="@+id/indicator"
         android:layout_width="match_parent"
         app:behindLayout="@layout/item_behind_view"
